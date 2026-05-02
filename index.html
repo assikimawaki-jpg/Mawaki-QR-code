@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mawaki QR code</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("qr-color-theme");
+        if (t !== "light" && t !== "dark") {
+          t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        }
+        document.documentElement.setAttribute("data-theme", t || "dark");
+        document.documentElement.style.colorScheme = t === "light" ? "light" : "dark";
+      } catch (e) {
+        document.documentElement.setAttribute("data-theme", "dark");
+        document.documentElement.style.colorScheme = "dark";
+      }
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-deep: #070a0f;
+      --surface: rgba(22, 28, 38, 0.72);
+      --surface-solid: #121822;
+      --border: rgba(120, 160, 210, 0.14);
+      --border-strong: rgba(140, 180, 240, 0.28);
+      --text: #f0f4fc;
+      --muted: #94a8c4;
+      --accent: #5eb5ff;
+      --accent-2: #a78bfa;
+      --accent-hot: #22d3ee;
+      --danger: #fb7185;
+      --radius: 20px;
+      --radius-sm: 12px;
+      --shadow-lg: 0 28px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      --glass: blur(20px);
+      --title-grad: linear-gradient(135deg, #fff 0%, #c8daf8 45%, #a5c9ff 100%);
+      --input-bg: rgba(5, 8, 14, 0.55);
+      --input-icon-bg: rgba(255, 255, 255, 0.02);
+      --preview-empty-bg: rgba(0, 0, 0, 0.18);
+      --qr-host-bg: rgba(0, 0, 0, 0.25);
+      --segment-bg: rgba(8, 12, 20, 0.92);
+      --segment-border: rgba(140, 180, 240, 0.28);
+      --export-select-bg: rgba(5, 8, 14, 0.65);
+      --noise-opacity: 0.035;
+      --orb-opacity: 0.55;
+      --theme-card-bg: rgba(0, 0, 0, 0.22);
+      --footer-border: rgba(120, 160, 210, 0.12);
+    }
+
+    html[data-theme="light"] {
+      color-scheme: light;
+      --bg-deep: #e8edf7;
+      --surface: rgba(255, 255, 255, 0.9);
+      --surface-solid: #ffffff;
+      --border: rgba(15, 23, 42, 0.1);
+      --border-strong: rgba(15, 23, 42, 0.18);
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #2563eb;
+      --accent-2: #7c3aed;
+      --accent-hot: #0891b2;
+      --danger: #e11d48;
+      --shadow-lg: 0 24px 56px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+      --title-grad: linear-gradient(135deg, #0f172a 0%, #334155 48%, #2563eb 100%);
+      --input-bg: rgba(255, 255, 255, 0.95);
+      --input-icon-bg: rgba(15, 23, 42, 0.04);
+      --preview-empty-bg: rgba(241, 245, 249, 0.95);
+      --qr-host-bg: rgba(241, 245, 249, 0.9);
+      --segment-bg: rgba(255, 255, 255, 0.96);
+      --segment-border: rgba(15, 23, 42, 0.12);
+      --export-select-bg: rgba(255, 255, 255, 0.98);
+      --noise-opacity: 0.02;
+      --orb-opacity: 0.38;
+      --theme-card-bg: rgba(255, 255, 255, 0.94);
+      --footer-border: rgba(15, 23, 42, 0.08);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Outfit", system-ui, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(1rem, 4vw, 2rem);
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .bg-mesh {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 100% 80% at 50% -30%, rgba(94, 181, 255, 0.22), transparent 55%),
+        radial-gradient(ellipse 70% 50% at 100% 20%, rgba(167, 139, 250, 0.18), transparent 50%),
+        radial-gradient(ellipse 60% 45% at 0% 80%, rgba(34, 211, 238, 0.12), transparent 45%),
+        radial-gradient(ellipse 90% 60% at 50% 120%, rgba(94, 181, 255, 0.08), transparent 40%);
+    }
+
+    html[data-theme="light"] .bg-mesh {
+      background:
+        radial-gradient(ellipse 100% 80% at 50% -25%, rgba(59, 130, 246, 0.14), transparent 52%),
+        radial-gradient(ellipse 70% 50% at 100% 15%, rgba(139, 92, 246, 0.1), transparent 48%),
+        radial-gradient(ellipse 55% 40% at 0% 85%, rgba(6, 182, 212, 0.08), transparent 42%),
+        radial-gradient(ellipse 85% 55% at 50% 110%, rgba(59, 130, 246, 0.06), transparent 38%);
+    }
+
+    .bg-noise {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: var(--noise-opacity);
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: var(--orb-opacity);
+    }
+
+    .orb-1 {
+      width: min(420px, 90vw);
+      height: min(420px, 90vw);
+      top: -12%;
+      right: -15%;
+      background: radial-gradient(circle, rgba(94, 181, 255, 0.5), transparent 70%);
+      animation: float 18s ease-in-out infinite;
+    }
+
+    .orb-2 {
+      width: min(360px, 80vw);
+      height: min(360px, 80vw);
+      bottom: -8%;
+      left: -12%;
+      background: radial-gradient(circle, rgba(167, 139, 250, 0.45), transparent 70%);
+      animation: float 22s ease-in-out infinite reverse;
+    }
+
+    @keyframes float {
+      0%,
+      100% {
+        transform: translate(0, 0) scale(1);
+      }
+      50% {
+        transform: translate(-16px, 12px) scale(1.05);
+      }
+    }
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 980px;
+    }
+
+    .shell-head {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+
+    .lang-switch,
+    .theme-switch {
+      display: inline-flex;
+      flex-direction: row;
+      position: relative;
+      padding: 3px;
+      border-radius: 11px;
+      border: 1px solid var(--segment-border);
+      background: var(--segment-bg);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+
+    html[data-theme="light"] .lang-switch,
+    html[data-theme="light"] .theme-switch {
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+    }
+
+    .lang-switch .lang-pill,
+    .theme-switch .theme-pill {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: calc((100% - 6px) / 2);
+      height: calc(100% - 6px);
+      border-radius: 8px;
+      background: linear-gradient(135deg, #3d7ddd, #5eb5ff);
+      box-shadow: 0 2px 12px rgba(94, 181, 255, 0.35);
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .lang-switch[data-lang="en"] .lang-pill {
+      transform: translateX(100%);
+    }
+
+    .theme-switch[data-theme="light"] .theme-pill {
+      transform: translateX(100%);
+    }
+
+    .lang-seg {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      min-width: 46px;
+      padding: 0.42rem 0.65rem;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: color 0.2s;
+    }
+
+    .lang-switch[data-lang="fr"] .lang-seg[data-lang="fr"],
+    .lang-switch[data-lang="en"] .lang-seg[data-lang="en"] {
+      color: #ffffff;
+    }
+
+    .lang-seg:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .theme-seg {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      min-width: 42px;
+      padding: 0.38rem 0.5rem;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-seg svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      flex-shrink: 0;
+    }
+
+    .theme-switch[data-theme="dark"] .theme-seg[data-theme="dark"],
+    .theme-switch[data-theme="light"] .theme-seg[data-theme="light"] {
+      color: #ffffff;
+    }
+
+    .theme-seg:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-hot);
+      background: rgba(34, 211, 238, 0.1);
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      margin-bottom: 1rem;
+    }
+
+    .badge svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.95;
+    }
+
+    h1 {
+      font-family: "Syne", "Outfit", sans-serif;
+      font-size: clamp(1.65rem, 5vw, 2.05rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin: 0 0 0.65rem;
+      background: var(--title-grad);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 400;
+      margin: 0 auto;
+      max-width: 38ch;
+      line-height: 1.55;
+    }
+
+    .card {
+      position: relative;
+      background: var(--surface);
+      backdrop-filter: var(--glass);
+      -webkit-backdrop-filter: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: clamp(1.35rem, 4vw, 1.75rem);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .card-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+      gap: clamp(1.25rem, 3vw, 2rem);
+      align-items: start;
+    }
+
+    .card-main {
+      min-width: 0;
+    }
+
+    .card-preview-aside {
+      position: sticky;
+      top: 1rem;
+      min-width: 0;
+      padding-left: clamp(1rem, 2.5vw, 1.5rem);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+    }
+
+    .preview-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 280px;
+      padding: 1.25rem;
+      border-radius: var(--radius-sm);
+      border: 1px dashed var(--border-strong);
+      background: var(--preview-empty-bg);
+      color: var(--muted);
+      gap: 0.35rem;
+    }
+
+    .preview-empty strong {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .preview-empty span {
+      font-size: 0.88rem;
+      line-height: 1.45;
+      max-width: 22ch;
+    }
+
+    .card-preview-aside.has-qr .preview-empty {
+      display: none;
+    }
+
+    @media (max-width: 820px) {
+      .card-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .card-preview-aside {
+        position: static;
+        padding-left: 0;
+        border-left: none;
+        padding-top: 1.35rem;
+        margin-top: 0.25rem;
+        border-top: 1px solid var(--border);
+      }
+
+      .preview-empty {
+        min-height: 200px;
+      }
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.14),
+        rgba(255, 255, 255, 0.02) 40%,
+        rgba(94, 181, 255, 0.08)
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-wrap:focus-within {
+      border-color: rgba(94, 181, 255, 0.45);
+      box-shadow: 0 0 0 4px rgba(94, 181, 255, 0.12);
+    }
+
+    .input-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 0.85rem;
+      color: var(--muted);
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      background: var(--input-icon-bg);
+    }
+
+    .input-icon svg {
+      width: 20px;
+      height: 20px;
+      opacity: 0.85;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      min-width: 0;
+      padding: 0.85rem 1rem;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+    }
+
+    input::placeholder {
+      color: var(--muted);
+      opacity: 0.65;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    .input-row .input-wrap {
+      flex: 1 1 220px;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1.2rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #5eb5ff 0%, #4f8cef 50%, #7c6cf0 100%);
+      color: #05080f;
+      box-shadow: 0 8px 28px rgba(94, 181, 255, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 12px 36px rgba(94, 181, 255, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border: 1px solid var(--border-strong);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(180, 210, 255, 0.35);
+    }
+
+    .btn-secondary:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+    }
+
+    .generate-row {
+      margin-top: 0.65rem;
+    }
+
+    .generate-row .btn-primary {
+      width: 100%;
+      padding: 0.95rem 1.25rem;
+      font-size: 0.98rem;
+    }
+
+    .actions {
+      margin-top: 0.25rem;
+      display: flex;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .actions .btn-secondary {
+      min-width: 220px;
+    }
+
+    .card-preview-aside .actions .btn-secondary {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .export-row {
+      width: 100%;
+      margin-top: 0.35rem;
+    }
+
+    .export-field-label {
+      margin-bottom: 0.45rem;
+    }
+
+    .export-select {
+      width: 100%;
+      padding: 0.65rem 2.25rem 0.65rem 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background-color: var(--export-select-bg);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a8c4'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.65rem center;
+      background-size: 1rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .export-select:focus {
+      border-color: rgba(94, 181, 255, 0.45);
+      box-shadow: 0 0 0 4px rgba(94, 181, 255, 0.12);
+    }
+
+    .export-select:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    html[data-theme="light"] .export-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    }
+
+    html[data-theme="light"] .theme-option input:checked + .theme-card {
+      border-color: rgba(37, 99, 235, 0.45);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1), 0 8px 20px rgba(15, 23, 42, 0.06);
+      background: linear-gradient(
+        145deg,
+        rgba(37, 99, 235, 0.08),
+        rgba(124, 58, 237, 0.05)
+      );
+    }
+
+    .error {
+      margin-top: 0.85rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--danger);
+      display: none;
+      padding: 0.65rem 0.85rem;
+      border-radius: var(--radius-sm);
+      background: rgba(251, 113, 133, 0.08);
+      border: 1px solid rgba(251, 113, 133, 0.22);
+    }
+
+    .error.visible {
+      display: block;
+      animation: shake 0.45s ease;
+    }
+
+    @keyframes shake {
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+      25% {
+        transform: translateX(-4px);
+      }
+      75% {
+        transform: translateX(4px);
+      }
+    }
+
+    .preview {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.15rem;
+      width: 100%;
+    }
+
+    .card-preview-aside .preview {
+      align-items: center;
+    }
+
+    .preview.visible {
+      display: flex;
+      animation: previewIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes previewIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .preview-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .preview-glow {
+      position: relative;
+      padding: 3px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(94, 181, 255, 0.45), rgba(167, 139, 250, 0.35), rgba(34, 211, 238, 0.25));
+    }
+
+    .preview .qr-host {
+      min-width: min(256px, 100%);
+      min-height: 256px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      border-radius: 19px;
+      background: var(--qr-host-bg);
+    }
+
+    .preview .qr-frame {
+      display: inline-block;
+      padding: 12px;
+      border-radius: 16px;
+      box-shadow:
+        0 16px 48px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+      line-height: 0;
+    }
+
+    html[data-theme="light"] .preview .qr-frame {
+      box-shadow:
+        0 12px 40px rgba(15, 23, 42, 0.12),
+        0 0 0 1px rgba(15, 23, 42, 0.06);
+    }
+
+    .preview .qr-frame canvas,
+    .preview .qr-frame img {
+      display: block;
+      border-radius: 10px;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .hint {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-align: center;
+      max-width: 38ch;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .card-preview-aside .hint {
+      max-width: 100%;
+    }
+
+    .site-footer {
+      margin-top: 2.5rem;
+      padding-top: 1.25rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      opacity: 0.88;
+      border-top: 1px solid var(--footer-border);
+    }
+
+    .theme-block {
+      margin-top: 1.35rem;
+    }
+
+    .theme-block .field-label {
+      margin-bottom: 0.75rem;
+    }
+
+    .theme-picker {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+      gap: 0.55rem;
+    }
+
+    .theme-option {
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .theme-option input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+    }
+
+    .theme-card {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.65rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--theme-card-bg);
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, transform 0.15s;
+    }
+
+    .theme-option:hover .theme-card {
+      border-color: rgba(140, 180, 240, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .theme-option input:focus-visible + .theme-card {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .theme-option input:checked + .theme-card {
+      border-color: rgba(94, 181, 255, 0.65);
+      box-shadow: 0 0 0 3px rgba(94, 181, 255, 0.15), 0 8px 24px rgba(0, 0, 0, 0.25);
+      background: linear-gradient(145deg, rgba(94, 181, 255, 0.12), rgba(167, 139, 250, 0.06));
+    }
+
+    .theme-swatch {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .theme-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+
+      .preview.visible {
+        animation: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-mesh" aria-hidden="true"></div>
+  <div class="bg-noise" aria-hidden="true"></div>
+  <div class="orb orb-1" aria-hidden="true"></div>
+  <div class="orb orb-2" aria-hidden="true"></div>
+
+  <main class="shell">
+    <div class="shell-head">
+      <div
+        class="theme-switch"
+        id="theme-switch"
+        data-theme="dark"
+        role="group"
+        data-i18n-aria="themeToggleGroup"
+      >
+        <span class="theme-pill" aria-hidden="true"></span>
+        <button type="button" class="theme-seg" data-theme="dark" aria-pressed="true" data-i18n-aria="themeDark">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+          </svg>
+        </button>
+        <button type="button" class="theme-seg" data-theme="light" aria-pressed="false" data-i18n-aria="themeLight">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </button>
+      </div>
+      <div
+        class="lang-switch"
+        id="lang-switch"
+        data-lang="fr"
+        role="group"
+        aria-label="Langue / Language"
+      >
+        <span class="lang-pill" aria-hidden="true"></span>
+        <button type="button" class="lang-seg" data-lang="fr" aria-pressed="true">FR</button>
+        <button type="button" class="lang-seg" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+
+    <header class="hero">
+      <span class="badge">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        <span data-i18n="badge">100 % dans votre navigateur</span>
+      </span>
+      <h1 data-i18n="title">Mawaki QR code</h1>
+      <p class="subtitle" data-i18n="subtitle">Collez une URL, choisissez un thème et obtenez un code QR prêt à partager — tout reste sur cet appareil.</p>
+    </header>
+
+    <div class="card">
+      <div class="card-layout">
+        <div class="card-main">
+          <label class="field-label" for="url" data-i18n="labelUrl">Adresse du lien</label>
+          <div class="input-row">
+            <div class="input-wrap">
+              <span class="input-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                </svg>
+              </span>
+              <input
+                id="url"
+                type="text"
+                inputmode="url"
+                autocomplete="url"
+                placeholder="https://exemple.fr/page"
+              />
+            </div>
+          </div>
+
+          <div class="generate-row">
+            <button type="button" class="btn btn-primary" id="generate">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+              </svg>
+              <span data-i18n="btnGenerate">Générer le code QR</span>
+            </button>
+          </div>
+
+          <div class="theme-block">
+            <label class="field-label" id="theme-label" data-i18n="themeLabel">Thème du code QR</label>
+            <div
+              class="theme-picker"
+              role="radiogroup"
+              aria-labelledby="theme-label"
+            >
+          <label class="theme-option">
+            <input type="radio" name="theme" value="classic" checked />
+            <span class="theme-card">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #0f1419 50%, #ffffff 50%)"></span>
+              <span class="theme-name" data-i18n="themeClassic">Classique</span>
+            </span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="theme" value="ocean" />
+            <span class="theme-card">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #0369a1 50%, #e0f2fe 50%)"></span>
+              <span class="theme-name" data-i18n="themeOcean">Océan</span>
+            </span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="theme" value="forest" />
+            <span class="theme-card">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #166534 50%, #dcfce7 50%)"></span>
+              <span class="theme-name" data-i18n="themeForest">Forêt</span>
+            </span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="theme" value="violet" />
+            <span class="theme-card">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #5b21b6 50%, #ede9fe 50%)"></span>
+              <span class="theme-name" data-i18n="themeViolet">Violet</span>
+            </span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="theme" value="night" />
+            <span class="theme-card">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #38bdf8 50%, #0f172a 50%)"></span>
+              <span class="theme-name" data-i18n="themeNight">Nuit</span>
+            </span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="theme" value="ruby" />
+            <span class="theme-card">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #be123c 50%, #fff1f2 50%)"></span>
+              <span class="theme-name" data-i18n="themeRuby">Rubis</span>
+            </span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="theme" value="sand" />
+            <span class="theme-card">
+              <span class="theme-swatch" style="background: linear-gradient(135deg, #92400e 50%, #fffbeb 50%)"></span>
+              <span class="theme-name" data-i18n="themeSand">Sable</span>
+            </span>
+          </label>
+            </div>
+          </div>
+
+          <p class="error" id="error" role="alert"></p>
+        </div>
+
+        <aside class="card-preview-aside" id="preview-aside" data-i18n-aria="previewAside" aria-label="Aperçu du code QR">
+          <div class="preview-empty" id="preview-empty">
+            <strong data-i18n="previewEmptyStrong">Aperçu</strong>
+            <span data-i18n="previewEmptySpan">Le code QR s’affiche ici après génération.</span>
+          </div>
+          <div class="preview" id="preview" aria-live="polite">
+            <p class="preview-label" data-i18n="previewLabel">Aperçu</p>
+            <div class="preview-glow">
+              <div id="qrcode" class="qr-host" data-i18n-aria="qrAria" aria-label="Aperçu du code QR"></div>
+            </div>
+            <div class="export-row">
+              <label class="field-label export-field-label" for="export-format" data-i18n="exportFormat">Format d’export</label>
+              <select id="export-format" class="export-select" name="export-format" disabled>
+                <option value="png">PNG</option>
+                <option value="jpeg">JPEG (.jpg)</option>
+                <option value="webp">WebP</option>
+              </select>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn btn-secondary" id="download" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                <span data-i18n="btnDownload">Télécharger en PNG</span>
+              </button>
+            </div>
+            <p class="hint" data-i18n="hint">Changez de thème à tout moment : l’aperçu se met à jour si un lien est déjà généré.</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <footer class="site-footer" data-i18n="footer">Génération locale — vos liens ne quittent pas cette page.</footer>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    (function () {
+      var LANG_KEY = "qr-studio-lang";
+      var EXPORT_FMT_KEY = "qr-export-format";
+      var COLOR_THEME_KEY = "qr-color-theme";
+
+      var STR = {
+        fr: {
+          badge: "100 % dans votre navigateur",
+          title: "Mawaki QR code",
+          subtitle:
+            "Collez une URL, choisissez un thème et obtenez un code QR prêt à partager — tout reste sur cet appareil.",
+          labelUrl: "Adresse du lien",
+          placeholderUrl: "https://exemple.fr/page",
+          btnGenerate: "Générer le code QR",
+          themeLabel: "Thème du code QR",
+          themeClassic: "Classique",
+          themeOcean: "Océan",
+          themeForest: "Forêt",
+          themeViolet: "Violet",
+          themeNight: "Nuit",
+          themeRuby: "Rubis",
+          themeSand: "Sable",
+          previewAside: "Aperçu du code QR",
+          previewEmptyStrong: "Aperçu",
+          previewEmptySpan: "Le code QR s’affiche ici après génération.",
+          previewLabel: "Aperçu",
+          qrAria: "Aperçu du code QR",
+          btnDownload: "Télécharger",
+          exportFormat: "Format d’export",
+          themeToggleGroup: "Mode clair ou sombre",
+          themeDark: "Mode sombre",
+          themeLight: "Mode clair",
+          hint:
+            "Changez de thème à tout moment : l’aperçu se met à jour si un lien est déjà généré.",
+          footer: "Génération locale — vos liens ne quittent pas cette page.",
+          docTitle: "Mawaki QR code",
+          errLib:
+            "Impossible de charger la bibliothèque QR (réseau ou blocage). Rechargez la page.",
+          errEmpty: "Veuillez saisir une adresse.",
+          errInvalid:
+            "Adresse invalide. Utilisez http:// ou https:// ou un nom de domaine (ex. exemple.fr).",
+          errGen:
+            "Impossible de générer le code QR (texte trop long ou erreur interne).",
+          errTheme: "Impossible d’appliquer ce thème.",
+          errNoImg: "Image introuvable — générez d’abord un code QR.",
+          errDownload: "Téléchargement impossible sur ce navigateur.",
+        },
+        en: {
+          badge: "100% in your browser",
+          title: "Mawaki QR code",
+          subtitle:
+            "Paste a URL, pick a theme, and get a QR code ready to share — everything stays on this device.",
+          labelUrl: "Link address",
+          placeholderUrl: "https://example.com/page",
+          btnGenerate: "Generate QR code",
+          themeLabel: "QR theme",
+          themeClassic: "Classic",
+          themeOcean: "Ocean",
+          themeForest: "Forest",
+          themeViolet: "Violet",
+          themeNight: "Night",
+          themeRuby: "Ruby",
+          themeSand: "Sand",
+          previewAside: "QR preview",
+          previewEmptyStrong: "Preview",
+          previewEmptySpan: "Your QR code will appear here after you generate it.",
+          previewLabel: "Preview",
+          qrAria: "QR code preview",
+          btnDownload: "Download",
+          exportFormat: "Export format",
+          themeToggleGroup: "Light or dark appearance",
+          themeDark: "Dark mode",
+          themeLight: "Light mode",
+          hint:
+            "Switch themes anytime — the preview updates if a link is already generated.",
+          footer: "Local generation — your links never leave this page.",
+          docTitle: "Mawaki QR code",
+          errLib:
+            "Could not load the QR library (network or blocker). Please reload the page.",
+          errEmpty: "Please enter a web address.",
+          errInvalid:
+            "Invalid address. Use http:// or https:// or a domain name (e.g. example.com).",
+          errGen: "Could not generate the QR code (text too long or internal error).",
+          errTheme: "Could not apply this theme.",
+          errNoImg: "No image — generate a QR code first.",
+          errDownload: "Download is not available in this browser.",
+        },
+      };
+
+      function getStoredLang() {
+        try {
+          var s = localStorage.getItem(LANG_KEY);
+          if (s === "fr" || s === "en") return s;
+        } catch (e) {}
+        return "fr";
+      }
+
+      var currentLang = getStoredLang();
+
+      function t(key) {
+        var pack = STR[currentLang] || STR.fr;
+        if (pack[key] !== undefined) return pack[key];
+        return STR.fr[key] !== undefined ? STR.fr[key] : key;
+      }
+
+      function applyLang(lang) {
+        if (lang !== "fr" && lang !== "en") lang = "fr";
+        currentLang = lang;
+        try {
+          localStorage.setItem(LANG_KEY, lang);
+        } catch (e) {}
+        document.documentElement.lang = lang === "en" ? "en" : "fr";
+
+        var switchEl = document.getElementById("lang-switch");
+        if (switchEl) switchEl.setAttribute("data-lang", lang);
+
+        var frBtn = document.querySelector('.lang-seg[data-lang="fr"]');
+        var enBtn = document.querySelector('.lang-seg[data-lang="en"]');
+        if (frBtn) frBtn.setAttribute("aria-pressed", lang === "fr" ? "true" : "false");
+        if (enBtn) enBtn.setAttribute("aria-pressed", lang === "en" ? "true" : "false");
+
+        document.querySelectorAll("[data-i18n]").forEach(function (el) {
+          var key = el.getAttribute("data-i18n");
+          if (key) el.textContent = t(key);
+        });
+
+        var urlInput = document.getElementById("url");
+        if (urlInput) urlInput.placeholder = t("placeholderUrl");
+
+        document.querySelectorAll("[data-i18n-aria]").forEach(function (el) {
+          var key = el.getAttribute("data-i18n-aria");
+          if (key) el.setAttribute("aria-label", t(key));
+        });
+
+        document.title = t("docTitle");
+      }
+
+      function applyColorTheme(theme) {
+        if (theme !== "light" && theme !== "dark") theme = "dark";
+        document.documentElement.setAttribute("data-theme", theme);
+        document.documentElement.style.colorScheme = theme === "light" ? "light" : "dark";
+        try {
+          localStorage.setItem(COLOR_THEME_KEY, theme);
+        } catch (e) {}
+
+        var themeSwitch = document.getElementById("theme-switch");
+        if (themeSwitch) themeSwitch.setAttribute("data-theme", theme);
+
+        var darkBtn = document.querySelector('.theme-seg[data-theme="dark"]');
+        var lightBtn = document.querySelector('.theme-seg[data-theme="light"]');
+        if (darkBtn) darkBtn.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+        if (lightBtn) lightBtn.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+      }
+
+      var THEMES = {
+        classic: { colorDark: "#0f1419", colorLight: "#ffffff" },
+        ocean: { colorDark: "#0369a1", colorLight: "#e0f2fe" },
+        forest: { colorDark: "#166534", colorLight: "#dcfce7" },
+        violet: { colorDark: "#5b21b6", colorLight: "#ede9fe" },
+        night: { colorDark: "#38bdf8", colorLight: "#0f172a" },
+        ruby: { colorDark: "#be123c", colorLight: "#fff1f2" },
+        sand: { colorDark: "#92400e", colorLight: "#fffbeb" },
+      };
+
+      var input = document.getElementById("url");
+      var btnGenerate = document.getElementById("generate");
+      var btnDownload = document.getElementById("download");
+      var errorEl = document.getElementById("error");
+      var preview = document.getElementById("preview");
+      var qrHost = document.getElementById("qrcode");
+      var previewAside = document.querySelector(".card-preview-aside");
+      var exportSelect = document.getElementById("export-format");
+      var themeRadios = document.querySelectorAll('input[name="theme"]');
+
+      function getStoredExportFormat() {
+        try {
+          var v = localStorage.getItem(EXPORT_FMT_KEY);
+          if (v === "png" || v === "jpeg" || v === "webp") return v;
+        } catch (e) {}
+        return "png";
+      }
+
+      function setExportControlsEnabled(enabled) {
+        if (exportSelect) exportSelect.disabled = !enabled;
+      }
+
+      function syncExportSelectFromStorage() {
+        if (!exportSelect) return;
+        exportSelect.value = getStoredExportFormat();
+      }
+
+      syncExportSelectFromStorage();
+
+      if (exportSelect) {
+        exportSelect.addEventListener("change", function () {
+          var v = exportSelect.value;
+          if (v === "png" || v === "jpeg" || v === "webp") {
+            try {
+              localStorage.setItem(EXPORT_FMT_KEY, v);
+            } catch (e) {}
+          }
+        });
+      }
+
+      function getTheme() {
+        var checked = document.querySelector('input[name="theme"]:checked');
+        var id = checked ? checked.value : "classic";
+        return THEMES[id] || THEMES.classic;
+      }
+
+      function showError(msg) {
+        errorEl.textContent = msg;
+        errorEl.classList.add("visible");
+      }
+
+      function clearError() {
+        errorEl.textContent = "";
+        errorEl.classList.remove("visible");
+      }
+
+      function normalizeUrl(raw) {
+        var t = raw.trim();
+        if (!t) return "";
+        if (/^https?:\/\//i.test(t)) return t;
+        return "https://" + t;
+      }
+
+      function isProbablyValidUrl(s) {
+        try {
+          var u = new URL(s);
+          return u.protocol === "http:" || u.protocol === "https:";
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function frameQrHost(theme) {
+        var wrap = document.createElement("div");
+        wrap.className = "qr-frame";
+        wrap.style.backgroundColor = theme.colorLight;
+        while (qrHost.firstChild) {
+          wrap.appendChild(qrHost.firstChild);
+        }
+        qrHost.appendChild(wrap);
+      }
+
+      function renderQr(url) {
+        var theme = getTheme();
+        qrHost.innerHTML = "";
+        new QRCode(qrHost, {
+          text: url,
+          width: 256,
+          height: 256,
+          colorDark: theme.colorDark,
+          colorLight: theme.colorLight,
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+        frameQrHost(theme);
+      }
+
+      function getQrImageDataUrl() {
+        var canvas = qrHost.querySelector("canvas");
+        if (canvas) return canvas.toDataURL("image/png");
+        var img = qrHost.querySelector("img");
+        if (img && /^data:/i.test(img.src)) return img.src;
+        return null;
+      }
+
+      /**
+       * Image avec fond du thème et marges ; encode selon format (png / jpeg / webp).
+       * callback(dataUrl, fileExtension) — extension sans point.
+       */
+      function buildDownloadImageDataUrl(theme, formatKey, callback) {
+        var source = qrHost.querySelector("canvas");
+        if (!source) {
+          callback(null, null);
+          return;
+        }
+        var pad = 12;
+        var w = source.width + pad * 2;
+        var h = source.height + pad * 2;
+        var out = document.createElement("canvas");
+        out.width = w;
+        out.height = h;
+        var ctx = out.getContext("2d");
+        if (!ctx) {
+          callback(null, null);
+          return;
+        }
+        ctx.fillStyle = theme.colorLight;
+        if (typeof ctx.roundRect === "function") {
+          ctx.beginPath();
+          ctx.roundRect(0, 0, w, h, 14);
+          ctx.fill();
+        } else {
+          ctx.fillRect(0, 0, w, h);
+        }
+        ctx.drawImage(source, pad, pad);
+
+        var mime = "image/png";
+        var ext = "png";
+        var quality;
+
+        if (formatKey === "jpeg") {
+          mime = "image/jpeg";
+          ext = "jpg";
+          quality = 0.92;
+        } else if (formatKey === "webp") {
+          mime = "image/webp";
+          ext = "webp";
+          quality = 0.92;
+        }
+
+        var dataUrl;
+        try {
+          dataUrl =
+            quality !== undefined ? out.toDataURL(mime, quality) : out.toDataURL(mime);
+        } catch (e1) {
+          try {
+            dataUrl = out.toDataURL("image/png");
+            ext = "png";
+          } catch (e2) {
+            callback(null, null);
+            return;
+          }
+        }
+
+        if (formatKey === "webp" && (!dataUrl || dataUrl.indexOf("image/webp") === -1)) {
+          try {
+            dataUrl = out.toDataURL("image/png");
+            ext = "png";
+          } catch (e3) {
+            callback(null, null);
+            return;
+          }
+        }
+
+        callback(dataUrl, ext);
+      }
+
+      function generate() {
+        clearError();
+
+        if (typeof QRCode === "undefined") {
+          showError(t("errLib"));
+          return;
+        }
+
+        var raw = input.value;
+        var url = normalizeUrl(raw);
+        if (!url) {
+          showError(t("errEmpty"));
+          return;
+        }
+        if (!isProbablyValidUrl(url)) {
+          showError(t("errInvalid"));
+          return;
+        }
+
+        try {
+          renderQr(url);
+          preview.classList.add("visible");
+          if (previewAside) previewAside.classList.add("has-qr");
+          btnDownload.disabled = false;
+          setExportControlsEnabled(true);
+          qrHost.dataset.lastUrl = url;
+        } catch (e) {
+          showError(t("errGen"));
+          preview.classList.remove("visible");
+          if (previewAside) previewAside.classList.remove("has-qr");
+          btnDownload.disabled = true;
+          setExportControlsEnabled(false);
+          delete qrHost.dataset.lastUrl;
+        }
+      }
+
+      function applyThemeIfQrExists() {
+        if (!qrHost.dataset.lastUrl) return;
+        if (typeof QRCode === "undefined") return;
+        clearError();
+        try {
+          renderQr(qrHost.dataset.lastUrl);
+          preview.classList.add("visible");
+          if (previewAside) previewAside.classList.add("has-qr");
+          btnDownload.disabled = false;
+          setExportControlsEnabled(true);
+        } catch (e) {
+          showError(t("errTheme"));
+        }
+      }
+
+      themeRadios.forEach(function (radio) {
+        radio.addEventListener("change", applyThemeIfQrExists);
+      });
+
+      btnGenerate.addEventListener("click", generate);
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") generate();
+      });
+
+      btnDownload.addEventListener("click", function () {
+        if (btnDownload.disabled) return;
+        var fmt =
+          exportSelect && exportSelect.value ? exportSelect.value : getStoredExportFormat();
+        if (fmt !== "png" && fmt !== "jpeg" && fmt !== "webp") fmt = "png";
+        var theme = getTheme();
+        buildDownloadImageDataUrl(theme, fmt, function (dataUrl, ext) {
+          if (!dataUrl || !ext) {
+            showError(t("errNoImg"));
+            return;
+          }
+          try {
+            var link = document.createElement("a");
+            link.download = "qrcode." + ext;
+            link.href = dataUrl;
+            link.click();
+          } catch (e) {
+            showError(t("errDownload"));
+          }
+        });
+      });
+
+      document.querySelectorAll(".theme-seg").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var th = btn.getAttribute("data-theme");
+          if (th === "light" || th === "dark") applyColorTheme(th);
+        });
+      });
+
+      document.querySelectorAll(".lang-switch .lang-seg").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var lang = btn.getAttribute("data-lang");
+          if (lang === "fr" || lang === "en") {
+            applyLang(lang);
+            clearError();
+          }
+        });
+      });
+
+      (function syncThemeFromDocument() {
+        var th = document.documentElement.getAttribute("data-theme");
+        if (th !== "light" && th !== "dark") th = "dark";
+        applyColorTheme(th);
+      })();
+
+      applyLang(currentLang);
+    })();
+  </script>
+</body>
+</html>
