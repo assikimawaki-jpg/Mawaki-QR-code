@@ -4,6 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mawaki QR code</title>
+  <link
+    rel="icon"
+    type="image/jpeg"
+    href="https://i.postimg.cc/7htq0TMJ/Chat-GPT-Image-3-mai-2026-05-03-14.jpg"
+  />
+  <link
+    rel="apple-touch-icon"
+    href="https://i.postimg.cc/7htq0TMJ/Chat-GPT-Image-3-mai-2026-05-03-14.jpg"
+  />
   <script>
     (function () {
       try {
@@ -859,6 +868,159 @@
       letter-spacing: 0;
     }
 
+    .thanks-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.28s ease, visibility 0.28s ease;
+      pointer-events: none;
+    }
+
+    .thanks-modal.thanks-modal--visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .thanks-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(5, 10, 22, 0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      cursor: pointer;
+    }
+
+    html[data-theme="light"] .thanks-modal-backdrop {
+      background: rgba(15, 23, 42, 0.5);
+    }
+
+    .thanks-modal-panel {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      padding: 2rem 1.85rem 1.65rem;
+      border-radius: 22px;
+      border: 1px solid rgba(94, 181, 255, 0.42);
+      box-shadow:
+        0 28px 90px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+        0 0 48px rgba(79, 172, 255, 0.12);
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      text-align: center;
+      transform: scale(0.94) translateY(10px);
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    html[data-theme="light"] .thanks-modal-panel {
+      border-color: rgba(37, 99, 235, 0.35);
+      box-shadow:
+        0 24px 64px rgba(15, 23, 42, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.95) inset;
+    }
+
+    .thanks-modal.thanks-modal--visible .thanks-modal-panel {
+      transform: scale(1) translateY(0);
+    }
+
+    .thanks-modal-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 2.25rem;
+      height: 2.25rem;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.35rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .thanks-modal-close:hover {
+      background: rgba(94, 181, 255, 0.1);
+      color: var(--text);
+    }
+
+    .thanks-modal-icon-wrap {
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 1.2rem;
+      border-radius: 14px;
+      border: 1px solid rgba(94, 181, 255, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(94, 181, 255, 0.09);
+      color: var(--accent);
+    }
+
+    html[data-theme="light"] .thanks-modal-icon-wrap {
+      border-color: rgba(37, 99, 235, 0.35);
+      background: rgba(37, 99, 235, 0.08);
+      color: var(--accent);
+    }
+
+    .thanks-modal-icon-wrap svg {
+      width: 28px;
+      height: 28px;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    .thanks-modal-panel h2 {
+      margin: 0 0 0.7rem;
+      font-family: "Syne", "Outfit", sans-serif;
+      font-size: 1.42rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .thanks-modal-panel .thanks-modal-text {
+      margin: 0 0 1.45rem;
+      font-size: 0.96rem;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .thanks-modal-btn {
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1.75rem;
+      background: linear-gradient(135deg, #5eb5ff 0%, #4f8cef 50%, #7c6cf0 100%);
+      color: #05080f;
+      box-shadow: 0 8px 24px rgba(94, 181, 255, 0.35);
+      transition: filter 0.15s, transform 0.1s;
+    }
+
+    .thanks-modal-btn:hover {
+      filter: brightness(1.06);
+    }
+
+    .thanks-modal-btn:active {
+      transform: scale(0.98);
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *,
       *::before,
@@ -869,6 +1031,14 @@
 
       .preview.visible {
         animation: none;
+      }
+
+      .thanks-modal-panel {
+        transition: none;
+      }
+
+      .thanks-modal.thanks-modal--visible .thanks-modal-panel {
+        transform: none;
       }
     }
   </style>
@@ -1051,6 +1221,39 @@
     <footer class="site-footer" data-i18n="footer">Génération locale — vos liens ne quittent pas cette page.</footer>
   </main>
 
+  <div
+    id="thanks-modal"
+    class="thanks-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="thanks-modal-title"
+    aria-hidden="true"
+    hidden
+  >
+    <div class="thanks-modal-backdrop" id="thanks-modal-backdrop" tabindex="-1" aria-hidden="true"></div>
+    <div class="thanks-modal-panel">
+      <button
+        type="button"
+        class="thanks-modal-close"
+        id="thanks-modal-close"
+        data-i18n-aria="thanksClose"
+        aria-label="Fermer"
+      >
+        ×
+      </button>
+      <div class="thanks-modal-icon-wrap" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+      </div>
+      <h2 id="thanks-modal-title" data-i18n="thanksTitle">Merci !</h2>
+      <p class="thanks-modal-text" data-i18n="thanksBody">
+        Merci d’avoir téléchargé votre code QR avec Mawaki. Bon partage !
+      </p>
+      <button type="button" class="thanks-modal-btn" id="thanks-modal-ok" data-i18n="thanksOk">Parfait</button>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     (function () {
@@ -1099,6 +1302,11 @@
           errTheme: "Impossible d’appliquer ce thème.",
           errNoImg: "Image introuvable — générez d’abord un code QR.",
           errDownload: "Téléchargement impossible sur ce navigateur.",
+          thanksTitle: "Merci !",
+          thanksBody:
+            "Merci d’avoir téléchargé votre code QR avec Mawaki. Bon partage !",
+          thanksClose: "Fermer la fenêtre",
+          thanksOk: "Parfait",
         },
         en: {
           badge: "100% in your browser",
@@ -1139,6 +1347,11 @@
           errTheme: "Could not apply this theme.",
           errNoImg: "No image — generate a QR code first.",
           errDownload: "Download is not available in this browser.",
+          thanksTitle: "Thank you!",
+          thanksBody:
+            "Thanks for downloading your QR code with Mawaki. Happy sharing!",
+          thanksClose: "Close dialog",
+          thanksOk: "Got it",
         },
       };
 
@@ -1453,6 +1666,47 @@
         if (e.key === "Enter") generate();
       });
 
+      var thanksModal = document.getElementById("thanks-modal");
+      var thanksBackdrop = document.getElementById("thanks-modal-backdrop");
+      var thanksCloseBtn = document.getElementById("thanks-modal-close");
+      var thanksOkBtn = document.getElementById("thanks-modal-ok");
+
+      function openThanksModal() {
+        if (!thanksModal) return;
+        thanksModal.removeAttribute("hidden");
+        thanksModal.classList.add("thanks-modal--visible");
+        thanksModal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+        if (thanksOkBtn) {
+          thanksOkBtn.focus();
+        }
+      }
+
+      function closeThanksModal() {
+        if (!thanksModal) return;
+        thanksModal.classList.remove("thanks-modal--visible");
+        thanksModal.setAttribute("aria-hidden", "true");
+        thanksModal.setAttribute("hidden", "");
+        document.body.style.overflow = "";
+        if (btnDownload) btnDownload.focus();
+      }
+
+      if (thanksBackdrop) {
+        thanksBackdrop.addEventListener("click", closeThanksModal);
+      }
+      if (thanksCloseBtn) {
+        thanksCloseBtn.addEventListener("click", closeThanksModal);
+      }
+      if (thanksOkBtn) {
+        thanksOkBtn.addEventListener("click", closeThanksModal);
+      }
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "Escape") return;
+        if (!thanksModal || !thanksModal.classList.contains("thanks-modal--visible")) return;
+        closeThanksModal();
+      });
+
       btnDownload.addEventListener("click", function () {
         if (btnDownload.disabled) return;
         var fmt =
@@ -1469,6 +1723,7 @@
             link.download = "qrcode." + ext;
             link.href = dataUrl;
             link.click();
+            openThanksModal();
           } catch (e) {
             showError(t("errDownload"));
           }
